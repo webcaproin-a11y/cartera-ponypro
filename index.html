@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartera de Clientes — PonyPro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F5F3EE; --surface: #FFFFFF; --surface2: #EEECE7;
+  --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.16);
+  --text: #1A1916; --text-muted: #6B6860; --text-faint: #A5A39E;
+  --accent: #1D4ED8; --accent-bg: #EFF4FF;
+  --danger: #C0392B; --danger-bg: #FEF2F0;
+  --warn: #9A5B00; --warn-bg: #FFF8ED;
+  --success: #1A6B3C; --success-bg: #EDFAF3;
+  --radius: 10px; --radius-lg: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 54px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.logo-mark { width: 28px; height: 28px; background: var(--text); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 11px; font-family: 'DM Mono', monospace; flex-shrink:0; }
+.topbar-title { font-size: 14px; font-weight: 600; letter-spacing: -0.3px; margin-right: 8px; }
+.topbar-nav { display: flex; gap: 4px; }
+.nav-btn { padding: 5px 12px; border: none; background: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.nav-btn:hover { background: var(--surface2); color: var(--text); }
+.nav-btn.active { background: var(--text); color: #fff; }
+.user-badge { font-size: 12px; color: var(--text-muted); background: var(--surface2); padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+.main { max-width: 1280px; margin: 0 auto; padding: 1.75rem 1.5rem; }
+.section { display: none; }
+.section.active { display: block; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; }
+.metric-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-faint); margin-bottom: 6px; }
+.metric-value { font-size: 20px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); font-family: 'DM Mono', monospace; }
+.metric-value.red { color: var(--danger); }
+.metric-value.amber { color: var(--warn); }
+.metric-value.green { color: var(--success); }
+.toolbar { display: flex; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; }
+.search-wrap { position: relative; flex: 1; min-width: 180px; }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-faint); font-size: 13px; pointer-events: none; }
+.search-wrap input { width: 100%; padding: 9px 12px 9px 32px; border: 1px solid var(--border-strong); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--surface); color: var(--text); outline: none; }
+select { padding: 9px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 13px; background: var(--surface); color: var(--text); outline: none; cursor: pointer; }
+.btn-action { padding: 9px 14px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; transition: all 0.15s; white-space: nowrap; }
+.btn-action:hover { background: var(--surface2); color: var(--text); }
+.btn-action.primary { background: var(--text); color: #fff; border-color: var(--text); }
+.btn-action.primary:hover { opacity: 0.85; }
+.date-wrap { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 0 10px; }
+.date-wrap label { font-size: 11px; color: var(--text-faint); white-space: nowrap; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+.date-wrap input[type="date"] { border: none; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); background: transparent; padding: 8px 0; outline: none; cursor: pointer; }
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 650px; }
+thead th { padding: 10px 14px; background: var(--surface2); text-align: left; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #FAFAF8; }
+tbody td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: middle; }
+.td-nombre { font-weight: 500; }
+.td-id { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-faint); }
+.td-num { text-align: right; font-family: 'DM Mono', monospace; font-size: 13px; }
+.td-num.bold { font-weight: 500; }
+.chevron { display: inline-flex; color: var(--text-faint); font-size: 10px; transition: transform 0.2s; }
+.chevron.open { transform: rotate(180deg); }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.b-green { background: var(--success-bg); color: var(--success); }
+.b-blue { background: var(--accent-bg); color: var(--accent); }
+.b-amber { background: var(--warn-bg); color: var(--warn); }
+.b-red { background: var(--danger-bg); color: var(--danger); }
+.detail-row td { padding: 0; background: #FAFAF8; }
+.detail-inner { padding: 8px 12px 14px 38px; border-top: 1px solid var(--border); }
+.detail-inner table { min-width: 0; }
+.detail-inner thead th { font-size: 10px; background: transparent; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.detail-inner tbody td { padding: 7px 10px; font-size: 12px; border-bottom: 1px solid var(--border); }
+.detail-inner tbody tr:last-child td { border-bottom: none; }
+.table-footer { padding: 10px 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-faint); display: flex; justify-content: space-between; }
+.state-row td { text-align: center; padding: 3rem 1rem; color: var(--text-muted); font-size: 13px; }
+.charts-filters { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.charts-filters label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
+.chart-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.chart-card p { font-size: 11px; color: var(--text-faint); margin-bottom: 1rem; }
+.chart-card.full { grid-column: 1 / -1; }
+.top10-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+.top10-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.top10-card.full { grid-column: 1 / -1; }
+.top10-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+.top10-header h3 { font-size: 13px; font-weight: 600; }
+.top10-header p { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.top10-table { width: 100%; border-collapse: collapse; }
+.top10-table th { padding: 8px 14px; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-faint); text-align: left; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.top10-table td { padding: 9px 14px; font-size: 12px; border-bottom: 1px solid var(--border); }
+.top10-table tbody tr:last-child td { border-bottom: none; }
+.top10-table tbody tr:hover { background: #FAFAF8; }
+.rank { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-faint); width: 28px; }
+.rank.top3 { color: var(--warn); font-weight: 600; }
+.loading-overlay { position: fixed; inset: 0; background: rgba(245,243,238,0.75); display: none; align-items: center; justify-content: center; z-index: 999; }
+.loading-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem 2rem; text-align: center; box-shadow: var(--shadow); }
+.loading-box p { font-size: 13px; color: var(--text-muted); margin-top: 10px; }
+.spinner { width: 20px; height: 20px; border: 2px solid var(--border-strong); border-top-color: var(--text); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.animate-in { animation: fadeIn 0.2s ease forwards; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; position: relative; overflow: hidden; }
+.kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--kpi-color, var(--accent)); }
+.kpi-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-faint); margin-bottom: 6px; }
+.kpi-value { font-size: 20px; font-weight: 600; letter-spacing: -0.5px; font-family: 'DM Mono', monospace; color: var(--text); }
+.kpi-sub { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+.kpi.danger { --kpi-color: var(--danger); }
+.kpi.danger .kpi-value { color: var(--danger); }
+.kpi.warn { --kpi-color: var(--warn); }
+.kpi.warn .kpi-value { color: var(--warn); }
+.kpi.success { --kpi-color: var(--success); }
+.kpi.success .kpi-value { color: var(--success); }
+.kpi.blue { --kpi-color: var(--accent); }
+.mora-alert { background: var(--danger-bg); border: 1px solid rgba(192,57,43,0.25); border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: var(--danger); margin-bottom: 1.25rem; display: none; }
+.mora-alert.show { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 820px) {
+  .top10-grid, .charts-grid { grid-template-columns: 1fr; }
+  .chart-card.full, .top10-card.full { grid-column: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">PP</div>
+    <span class="topbar-title">PonyPro — Cartera</span>
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="showSection('cartera', this)">Cartera</button>
+      <button class="nav-btn" onclick="showSection('analisis', this)">Análisis</button>
+      <button class="nav-btn" onclick="showSection('top10', this)">Top 10</button>
+      <button class="nav-btn" onclick="showSection('cobranza', this)">Cobranza</button>
+    </div>
+  </div>
+  <span class="user-badge" id="last-update">Cargando...</span>
+</div>
+
+<div class="main">
+
+  <!-- ══ CARTERA ══ -->
+  <div class="section active" id="sec-cartera">
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Clientes</div><div class="metric-value" id="m-clientes">—</div></div>
+      <div class="metric"><div class="metric-label">Saldo total</div><div class="metric-value" id="m-total">—</div></div>
+      <div class="metric"><div class="metric-label">Por vencer</div><div class="metric-value green" id="m-vencer">—</div></div>
+      <div class="metric"><div class="metric-label">1–30 días</div><div class="metric-value amber" id="m-30">—</div></div>
+      <div class="metric"><div class="metric-label">31–60 días</div><div class="metric-value amber" id="m-60">—</div></div>
+      <div class="metric"><div class="metric-label">+90 días</div><div class="metric-value red" id="m-90">—</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search" placeholder="Buscar cliente..." oninput="renderCartera()">
+      </div>
+      <select id="filterRango" onchange="renderCartera()">
+        <option value="">Todos los rangos</option>
+        <option value="R1">Por vencer</option>
+        <option value="R2">1–30 días</option>
+        <option value="R3">31–60 días</option>
+        <option value="R4">61–90 días</option>
+        <option value="R5">+90 días</option>
+      </select>
+      <select id="sortBy" onchange="renderCartera()">
+        <option value="nombre">Nombre A–Z</option>
+        <option value="saldo">Mayor saldo</option>
+        <option value="dias">Más días vencido</option>
+      </select>
+      <div class="date-wrap">
+        <label>Desde</label>
+        <input type="date" id="fechainicial" value="2021-01-01">
+      </div>
+      <div class="date-wrap">
+        <label>Hasta</label>
+        <input type="date" id="fechafinal">
+      </div>
+      <button class="btn-action primary" onclick="loadAll()">↻ Actualizar</button>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:32px"></th>
+            <th>Cliente</th><th>ID</th>
+            <th style="text-align:right">Docs</th>
+            <th style="text-align:right">Saldo total</th>
+            <th style="text-align:right">Días máx.</th>
+            <th>Rango</th>
+          </tr></thead>
+          <tbody id="tbody-cartera"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="footer-count">—</span>
+        <span id="footer-fecha" style="font-family:'DM Mono',monospace;font-size:11px"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ANÁLISIS ══ -->
+  <div class="section" id="sec-analisis">
+    <div class="charts-filters">
+      <label>Filtros:</label>
+      <select id="f-año" onchange="renderCharts()"><option value="">Todos los años</option></select>
+      <select id="f-mes" onchange="renderCharts()">
+        <option value="">Todos los meses</option>
+        <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+        <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+        <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="f-vendedor" onchange="renderCharts()"><option value="">Todos los vendedores</option></select>
+      <select id="f-cliente-chart" onchange="renderCharts()"><option value="">Todos los clientes</option></select>
+      <button class="btn-action" onclick="resetChartFilters()">✕ Limpiar</button>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Ventas por mes</h3>
+        <p>Total pedidos despachados por mes</p>
+        <div style="position:relative;height:250px"><canvas id="chart-mes"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Ventas por año</h3>
+        <p>Comparativo anual de pedidos</p>
+        <div style="position:relative;height:250px"><canvas id="chart-ano"></canvas></div>
+      </div>
+      <div class="chart-card full">
+        <h3>Saldo de cartera por mes</h3>
+        <p>Evolución del saldo pendiente según fecha del documento</p>
+        <div style="position:relative;height:260px"><canvas id="chart-cartera-mes"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Top 5 clientes por ventas</h3>
+        <p>Clientes con mayor volumen de compra</p>
+        <div style="position:relative;height:250px"><canvas id="chart-top-cli"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Cartera por rango de vencimiento</h3>
+        <p>Distribución del saldo por antigüedad</p>
+        <div style="position:relative;height:250px"><canvas id="chart-rangos"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOP 10 ══ -->
+  <div class="section" id="sec-top10">
+    <div class="toolbar">
+      <select id="f-año-top" onchange="renderTop10()"><option value="">Todos los años</option></select>
+      <select id="f-mes-top" onchange="renderTop10()">
+        <option value="">Todos los meses</option>
+        <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+        <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+        <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="f-vendedor-top" onchange="renderTop10()"><option value="">Todos los vendedores</option></select>
+      <button class="btn-action" onclick="resetTopFilters()">✕ Limpiar</button>
+    </div>
+    <div class="top10-grid">
+      <div class="top10-card">
+        <div class="top10-header"><h3>Top 10 — Mayor volumen de compras</h3><p>Clientes con más pedidos despachados</p></div>
+        <table class="top10-table">
+          <thead><tr><th>#</th><th>Cliente</th><th style="text-align:right">Pedidos</th><th style="text-align:right">Total</th></tr></thead>
+          <tbody id="top10-compras"></tbody>
+        </table>
+      </div>
+      <div class="top10-card">
+        <div class="top10-header"><h3>Top 10 — Mayor saldo en cartera</h3><p>Clientes con mayor deuda pendiente</p></div>
+        <table class="top10-table">
+          <thead><tr><th>#</th><th>Cliente</th><th style="text-align:right">Saldo</th><th style="text-align:right">Días máx.</th></tr></thead>
+          <tbody id="top10-cartera"></tbody>
+        </table>
+      </div>
+      <div class="top10-card full">
+        <div class="top10-header"><h3>Días de pago — Plazo y mora por cliente</h3><p>Plazo promedio de crédito vs días de mora actuales en cartera</p></div>
+        <table class="top10-table">
+          <thead><tr><th>#</th><th>Cliente</th><th style="text-align:right">Plazo promedio</th><th style="text-align:right">Días mora</th><th style="text-align:right">Pedidos</th><th style="text-align:right">Total compras</th></tr></thead>
+          <tbody id="top10-dias"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ COBRANZA ══ -->
+  <div class="section" id="sec-cobranza">
+    <div class="charts-filters">
+      <label>Filtros:</label>
+      <select id="cob-vendedor" onchange="renderCobranza()"><option value="">Todos los vendedores</option></select>
+      <select id="cob-cliente" onchange="renderCobranza()"><option value="">Todos los clientes</option></select>
+      <button class="btn-action" onclick="resetCobFilters()">✕ Limpiar</button>
+    </div>
+    <div class="mora-alert" id="mora-alert">⚠ Índice de morosidad elevado — revisar con vendedores</div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-label">Cartera total</div><div class="kpi-value" id="k-total">—</div><div class="kpi-sub">Saldo total en la calle</div></div>
+      <div class="kpi success"><div class="kpi-label">Cartera corriente</div><div class="kpi-value" id="k-corriente">—</div><div class="kpi-sub">Por vencer (RANGO1)</div></div>
+      <div class="kpi danger"><div class="kpi-label">Cartera vencida</div><div class="kpi-value" id="k-vencida">—</div><div class="kpi-sub">Rangos 2 al 5</div></div>
+      <div class="kpi warn" id="kpi-mora"><div class="kpi-label">Índice de morosidad</div><div class="kpi-value" id="k-mora">—</div><div class="kpi-sub">Meta: menor al 15%</div></div>
+      <div class="kpi"><div class="kpi-label">Ticket promedio deuda</div><div class="kpi-value" id="k-ticket">—</div><div class="kpi-sub">Por factura</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card full">
+        <h3>Edad de la cartera</h3>
+        <p>Distribución del saldo por rango de vencimiento</p>
+        <div style="position:relative;height:300px"><canvas id="chart-edad"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Top 10 clientes morosos</h3>
+        <p>Clientes con mayor saldo vencido (rangos 2 al 5)</p>
+        <div style="position:relative;height:320px"><canvas id="chart-morosos"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Cartera por vendedor</h3>
+        <p>Saldo total asignado a cada comercial</p>
+        <div style="position:relative;height:320px"><canvas id="chart-vendedor"></canvas></div>
+      </div>
+      <div class="chart-card full">
+        <h3>Clientes en riesgo crítico (+90 días)</h3>
+        <p>Clientes con saldo en mora mayor a 90 días — acción de cobranza urgente</p>
+        <div class="table-wrap">
+          <table id="tabla-riesgo" style="min-width:600px">
+            <thead><tr>
+              <th>#</th>
+              <th>Cliente</th>
+              <th>Vendedor</th>
+              <th style="text-align:right">Saldo vencido +90d</th>
+              <th style="text-align:right">Saldo total</th>
+              <th style="text-align:right">% del total</th>
+              <th style="text-align:right">Días mora</th>
+              <th>Estado</th>
+            </tr></thead>
+            <tbody id="tbody-riesgo"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p id="loading-msg">Cargando datos...</p>
+  </div>
+</div>
+
+<script>
+const API = 'https://ponypro.ibla.co:31405';
+const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2OTEzNWEwNmQzYTFkOGE2MTBkNTU5NGEiLCJpYXQiOjE3NzMyNTU1NzcsImV4cCI6MTc3NDU1MTU3N30.ull5_DHdHapkkOvP5f-DwARdzAb4haycnvfgaJHzeqk';
+
+let ALL_CARTERA = [];
+let ALL_PEDIDOS = [];
+let CHARTS = {};
+let expandedRows = {};
+let currentSection = 'cartera';
+
+const fmt = v => '$' + Math.round(v).toLocaleString('es-CO');
+const fmtDate = s => s ? s.slice(0,10) : '—';
+const todayISO = () => new Date().toISOString().slice(0,10);
+const MESES_CORTO = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const RANGO_KEYS = ['RANGO1','RANGO2','RANGO3','RANGO4','RANGO5'];
+const RANGO_LABELS = ['Por vencer','1–30 días','31–60 días','61–90 días','+90 días'];
+const RANGO_BADGE = ['b-green','b-blue','b-amber','b-amber','b-red'];
+
+function peorRangoIdx(cartera) {
+  let w = -1;
+  cartera.forEach(d => { for(let i=4;i>=0;i--) if((d[RANGO_KEYS[i]]||0)>0 && i>w) w=i; });
+  return w;
+}
+function badge(i) {
+  return i<0 ? '—' : `<span class="badge ${RANGO_BADGE[i]}">${RANGO_LABELS[i]}</span>`;
+}
+const setLoading = (v, msg='Cargando...') => {
+  document.getElementById('loading').style.display = v ? 'flex' : 'none';
+  document.getElementById('loading-msg').textContent = msg;
+};
+
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  currentSection = name;
+  if(name === 'analisis') renderCharts();
+  if(name === 'top10') renderTop10();
+  if(name === 'cobranza') renderCobranza();
+}
+
+window.diagnostico = function() {
+  const marzo = ALL_PEDIDOS.filter(p => {
+    if(!p.FECHA) return false;
+    const parts = p.FECHA.split('/');
+    if(parts.length === 3) return parts[2] === '2026' && parts[1] === '03';
+    return p.FECHA.startsWith('2026-03');
+  });
+  const total = marzo.reduce((s,p) => s + getSubtotal(p), 0);
+  const sample = marzo.slice(0,2).map(p => p.NOMBRE_TERCERO + ': $' + getSubtotal(p).toLocaleString('es-CO')).join('\n');
+  alert('Facturas marzo 2026: ' + marzo.length + '\nTotal SUBTOTAL: $' + Math.round(total).toLocaleString('es-CO') + '\n\nEjemplos:\n' + sample);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fechafinal').value = todayISO();
+  loadAll();
+});
+
+async function loadAll() {
+  setLoading(true, 'Cargando cartera y pedidos...');
+  try {
+    await Promise.all([loadCarteraData(), loadPedidosData()]);
+    populateFilters();
+    renderCharts();
+    renderTop10();
+    renderCobranza();
+  } finally {
+    setLoading(false);
+    document.getElementById('last-update').textContent = 'Act. ' + new Date().toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+async function loadCarteraData() {
+  const fechafinal = document.getElementById('fechafinal').value || todayISO();
+  try {
+    const res = await fetch(`${API}/all/debit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'token': TOKEN },
+      body: JSON.stringify({ fechafinal })
+    });
+    const data = await res.json();
+    ALL_CARTERA = (data.debits || []).map(item => {
+      const t = item.tercero || item;
+      const cartera = t.cartera || [];
+      const saldo = cartera.reduce((s,d) => s+(d.SALDO||0), 0);
+      const dias = cartera.length ? Math.max(...cartera.map(d=>d.DIAS||0)) : 0;
+      return { ...t, cartera, saldo, dias, wr: peorRangoIdx(cartera) };
+    });
+    document.getElementById('footer-fecha').textContent = `Corte: ${fechafinal}`;
+    updateMetrics();
+    renderCartera();
+  } catch(e) { console.error('Cartera:', e); }
+}
+
+async function loadPedidosData() {
+  const fechafinal = document.getElementById('fechafinal').value || todayISO();
+  const fechainicial = document.getElementById('fechainicial').value || '2021-01-01';
+  try {
+    const res = await fetch(`https://ponypro.ibla.co:31406/all/invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'token': TOKEN },
+      body: JSON.stringify({ fechainicial, fechafinal })
+    });
+    const data = await res.json();
+    // API returns invoices or pedidos array, each item may be wrapped in .pedido or .invoice
+    const raw = data.invoices || data.pedidos || [];
+    ALL_PEDIDOS = raw.map(p => p.factura || p.pedido || p.invoice || p).filter(p => p && p.FECHA);
+    console.log('Facturas cargadas:', ALL_PEDIDOS.length);
+  } catch(e) { console.error('Facturas:', e); }
+}
+
+function populateFilters() {
+  const parseYear = p => {
+    if(!p.FECHA) return '';
+    return p.FECHA.includes('/') ? p.FECHA.split('/')[2] : p.FECHA.slice(0,4);
+  };
+  const años = [...new Set(ALL_PEDIDOS.map(parseYear))].filter(Boolean).sort();
+  const vendedores = [...new Set(ALL_PEDIDOS.map(p => p.NOMBRE_VENDEDOR || p.VENDEDOR || '').filter(v => v && v !== '0' && v.toString().trim() !== ''))].sort();
+  const clientes = [...new Set(ALL_PEDIDOS.map(p => p.NOMBRE_TERCERO).filter(Boolean))].sort();
+
+  const añoOpts = '<option value="">Todos los años</option>' + años.map(a=>'<option value="'+a+'">'+a+'</option>').join('');
+  const vendOpts = '<option value="">Todos los vendedores</option>' + vendedores.map(v=>'<option value="'+v+'">'+v+'</option>').join('');
+
+  ['f-año','f-año-top'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=añoOpts; });
+  ['f-vendedor','f-vendedor-top'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=vendOpts; });
+
+  const sc = document.getElementById('f-cliente-chart');
+  if(sc) sc.innerHTML = '<option value="">Todos los clientes</option>' + clientes.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+
+  // Populate cobranza filters from cartera data
+  const cartVendedores = [...new Set(ALL_CARTERA.flatMap(c=>c.cartera.map(d=>(d.NOMBRE_VEND||'').trim())).filter(Boolean))].sort();
+  const cartClientes = [...new Set(ALL_CARTERA.map(c=>c.NOMBRE_TERC).filter(Boolean))].sort();
+  const cobVendOpts = '<option value="">Todos los vendedores</option>' + cartVendedores.map(v=>'<option value="'+v+'">'+v+'</option>').join('');
+  const cobCliOpts = '<option value="">Todos los clientes</option>' + cartClientes.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+  const cv = document.getElementById('cob-vendedor'); if(cv) cv.innerHTML = cobVendOpts;
+  const cc = document.getElementById('cob-cliente'); if(cc) cc.innerHTML = cobCliOpts;
+}
+
+function getPedidosFiltrados(añoId, mesId, vendId, cliId) {
+  const año = document.getElementById(añoId)?.value||'';
+  const mes = document.getElementById(mesId)?.value||'';
+  const vend = document.getElementById(vendId)?.value||'';
+  const cli = cliId ? document.getElementById(cliId)?.value||'' : '';
+  return ALL_PEDIDOS.filter(p => {
+    let pYear, pMonth;
+    if(p.FECHA.includes('/')) { const [,m,a] = p.FECHA.split('/'); pYear=a; pMonth=m.padStart(2,'0'); }
+    else { pYear=p.FECHA.slice(0,4); pMonth=p.FECHA.slice(5,7); }
+    if(año && pYear !== año) return false;
+    if(mes && pMonth !== mes) return false;
+    if(vend && (p.NOMBRE_VENDEDOR||p.VENDEDOR||p.ID_VENDEDOR||'').toString() !== vend) return false;
+    if(cli && p.NOMBRE_TERCERO !== cli) return false;
+    return true;
+  });
+}
+
+function resetChartFilters() {
+  ['f-año','f-mes','f-vendedor','f-cliente-chart'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderCharts();
+}
+function resetCobFilters() {
+  ['cob-vendedor','cob-cliente'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderCobranza();
+}
+
+function resetTopFilters() {
+  ['f-año-top','f-mes-top','f-vendedor-top'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderTop10();
+}
+
+function updateMetrics() {
+  const d = ALL_CARTERA;
+  document.getElementById('m-clientes').textContent = d.length;
+  document.getElementById('m-total').textContent = fmt(d.reduce((s,x)=>s+x.saldo,0));
+  document.getElementById('m-vencer').textContent = fmt(d.reduce((s,x)=>s+x.cartera.reduce((ss,c)=>ss+(c.RANGO1||0),0),0));
+  document.getElementById('m-30').textContent = fmt(d.reduce((s,x)=>s+x.cartera.reduce((ss,c)=>ss+(c.RANGO2||0),0),0));
+  document.getElementById('m-60').textContent = fmt(d.reduce((s,x)=>s+x.cartera.reduce((ss,c)=>ss+(c.RANGO3||0),0),0));
+  document.getElementById('m-90').textContent = fmt(d.reduce((s,x)=>s+x.cartera.reduce((ss,c)=>ss+(c.RANGO5||0),0),0));
+}
+
+function renderCartera() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const fr = document.getElementById('filterRango').value;
+  const sb = document.getElementById('sortBy').value;
+  const RM = {R1:'RANGO1',R2:'RANGO2',R3:'RANGO3',R4:'RANGO4',R5:'RANGO5'};
+  let data = ALL_CARTERA.filter(d => {
+    if(q && !(d.NOMBRE_TERC||'').toLowerCase().includes(q)) return false;
+    if(fr && !d.cartera.some(c=>(c[RM[fr]]||0)>0)) return false;
+    return true;
+  });
+  if(sb==='saldo') data.sort((a,b)=>b.saldo-a.saldo);
+  else if(sb==='dias') data.sort((a,b)=>b.dias-a.dias);
+  else data.sort((a,b)=>(a.NOMBRE_TERC||'').localeCompare(b.NOMBRE_TERC||''));
+  const tbody = document.getElementById('tbody-cartera');
+  if(!data.length) { tbody.innerHTML=`<tr class="state-row"><td colspan="7">Sin resultados</td></tr>`; document.getElementById('footer-count').textContent='0 clientes'; return; }
+  tbody.innerHTML = data.map(d => {
+    const isExp = expandedRows[d.ID_TERCERO];
+    return `<tr onclick="toggleRow(${d.ID_TERCERO})" class="animate-in">
+      <td><span class="chevron ${isExp?'open':''}">▼</span></td>
+      <td class="td-nombre">${d.NOMBRE_TERC||'—'}</td>
+      <td class="td-id">${d.ID_TERCERO}</td>
+      <td class="td-num">${d.cartera.length}</td>
+      <td class="td-num bold">${fmt(d.saldo)}</td>
+      <td class="td-num" style="color:${d.dias>90?'var(--danger)':d.dias>60?'var(--warn)':'inherit'}">${d.dias}d</td>
+      <td>${badge(d.wr)}</td>
+    </tr>${isExp ? buildDetail(d) : ''}`;
+  }).join('');
+  document.getElementById('footer-count').textContent = `${data.length} clientes · ${fmt(data.reduce((s,d)=>s+d.saldo,0))} total`;
+}
+
+function buildDetail(d) {
+  const rows = d.cartera.map(doc => {
+    const wi = peorRangoIdx([doc]);
+    return `<tr><td>${doc.ID_TIPO||'—'}</td><td style="font-family:'DM Mono',monospace;font-size:11px">${doc.NUMERO||'—'}</td><td style="text-align:right">${doc.CUOTA||'—'}</td><td style="text-align:right;font-family:'DM Mono',monospace">${fmt(doc.SALDO||0)}</td><td style="font-family:'DM Mono',monospace;font-size:11px">${fmtDate(doc.VENCIMIENTO)}</td><td style="text-align:right">${doc.DIAS||0}d</td><td>${badge(wi)}</td></tr>`;
+  }).join('');
+  return `<tr class="detail-row"><td colspan="7"><div class="detail-inner"><table><thead><tr><th>Tipo</th><th>Número</th><th style="text-align:right">Cuota</th><th style="text-align:right">Saldo</th><th>Vencimiento</th><th style="text-align:right">Días</th><th>Rango</th></tr></thead><tbody>${rows}</tbody></table></div></td></tr>`;
+}
+function toggleRow(id) { expandedRows[id]=!expandedRows[id]; renderCartera(); }
+
+// ── UTILIDAD: SUBTOTAL DE FACTURA (suma SUBTOTAL de items, sin IVA) ──
+function getSubtotal(p) {
+  if(p.items && p.items.length) return p.items.reduce((s, it) => s + (it.SUBTOTAL || 0), 0);
+  if(p.Items && p.Items.length) return p.Items.reduce((s, it) => s + (it.SUBTOTAL || 0), 0);
+  return p.SUBTOTAL || p.TOTAL || 0;
+}
+
+// ── GRÁFICAS ──
+function destroyChart(id) { if(CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; } }
+const PALETTE = ['#1D4ED8','#0F6E56','#9A5B00','#C0392B','#533AB7','#185FA5','#3B6D11'];
+
+function renderCharts() {
+  const pedidos = getPedidosFiltrados('f-año','f-mes','f-vendedor','f-cliente-chart');
+
+  const parseYM = p => {
+    if(p.FECHA.includes('/')) { const [,m,a]=p.FECHA.split('/'); return `${a}-${m.padStart(2,'0')}`; }
+    return p.FECHA.slice(0,7);
+  };
+  const parseYear = p => p.FECHA.includes('/') ? p.FECHA.split('/')[2] : p.FECHA.slice(0,4);
+
+  // Ventas por mes
+  const vMes = {};
+  pedidos.forEach(p => { const k=parseYM(p); vMes[k]=(vMes[k]||0)+getSubtotal(p); });
+  const mKeys = Object.keys(vMes).sort();
+  destroyChart('mes');
+  if(document.getElementById('chart-mes')) CHARTS['mes'] = new Chart(document.getElementById('chart-mes'), {
+    type:'bar', data:{ labels: mKeys.map(k=>{ const [a,m]=k.split('-'); return `${MESES_CORTO[parseInt(m)]} ${a.slice(2)}`; }),
+    datasets:[{ data:mKeys.map(k=>Math.round(vMes[k])), backgroundColor:'#1D4ED8', borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{ticks:{callback:v=>'$'+Math.round(v/1000000)+'M'}}, x:{ticks:{autoSkip:true,maxRotation:45,font:{size:11}}} } }
+  });
+
+  // Ventas por año
+  const vAno = {};
+  pedidos.forEach(p => { const k=parseYear(p); vAno[k]=(vAno[k]||0)+getSubtotal(p); });
+  const aKeys = Object.keys(vAno).sort();
+  destroyChart('ano');
+  if(document.getElementById('chart-ano')) CHARTS['ano'] = new Chart(document.getElementById('chart-ano'), {
+    type:'bar', data:{ labels:aKeys, datasets:[{ data:aKeys.map(k=>Math.round(vAno[k])), backgroundColor:'#0F6E56', borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{ticks:{callback:v=>'$'+Math.round(v/1000000)+'M'}} } }
+  });
+
+  // Cartera por mes
+  const cMes = {};
+  ALL_CARTERA.forEach(c => c.cartera.forEach(doc => {
+    if(!doc.FECHA_DOC) return;
+    const d = new Date(doc.FECHA_DOC);
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    cMes[k] = (cMes[k]||0)+(doc.SALDO||0);
+  }));
+  const cmKeys = Object.keys(cMes).sort();
+  destroyChart('cartera-mes');
+  if(document.getElementById('chart-cartera-mes')) CHARTS['cartera-mes'] = new Chart(document.getElementById('chart-cartera-mes'), {
+    type:'line', data:{ labels:cmKeys.map(k=>{ const [a,m]=k.split('-'); return `${MESES_CORTO[parseInt(m)]} ${a.slice(2)}`; }),
+    datasets:[{ data:cmKeys.map(k=>Math.round(cMes[k])), borderColor:'#C0392B', backgroundColor:'rgba(192,57,43,0.07)', fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#C0392B' }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{ticks:{callback:v=>'$'+Math.round(v/1000000)+'M'}}, x:{ticks:{autoSkip:true,maxRotation:45,font:{size:11}}} } }
+  });
+
+  // Top 5 clientes
+  const cliV = {};
+  pedidos.forEach(p => { cliV[p.NOMBRE_TERCERO]=(cliV[p.NOMBRE_TERCERO]||0)+getSubtotal(p); });
+  const top5 = Object.entries(cliV).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  destroyChart('top-cli');
+  if(document.getElementById('chart-top-cli')) CHARTS['top-cli'] = new Chart(document.getElementById('chart-top-cli'), {
+    type:'bar', data:{ labels:top5.map(([n])=>n.length>22?n.slice(0,22)+'…':n),
+    datasets:[{ data:top5.map(([,v])=>Math.round(v)), backgroundColor:PALETTE.slice(0,5), borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{callback:v=>'$'+Math.round(v/1000000)+'M',font:{size:11}}}, y:{ticks:{font:{size:11}}} } }
+  });
+
+  // Rangos
+  const rangos = RANGO_KEYS.map((k,i)=>({ l:RANGO_LABELS[i], v:Math.round(ALL_CARTERA.reduce((s,c)=>s+c.cartera.reduce((ss,d)=>ss+(d[k]||0),0),0)) }));
+  destroyChart('rangos');
+  if(document.getElementById('chart-rangos')) CHARTS['rangos'] = new Chart(document.getElementById('chart-rangos'), {
+    type:'doughnut', data:{ labels:rangos.map(r=>r.l), datasets:[{ data:rangos.map(r=>r.v),
+      backgroundColor:['#1A6B3C','#1D4ED8','#9A5B00','#B85E00','#C0392B'], borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'right', labels:{ font:{size:11}, boxWidth:12, padding:10 } } } }
+  });
+}
+
+// ── TOP 10 ──
+function renderTop10() {
+  const pedidos = getPedidosFiltrados('f-año-top','f-mes-top','f-vendedor-top','');
+
+  // Top compras
+  const cMap = {};
+  pedidos.forEach(p => {
+    if(!cMap[p.NOMBRE_TERCERO]) cMap[p.NOMBRE_TERCERO]={total:0,count:0,id:p.ID_TERCERO};
+    cMap[p.NOMBRE_TERCERO].total+=getSubtotal(p);
+    cMap[p.NOMBRE_TERCERO].count++;
+  });
+  const top10c = Object.entries(cMap).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+  document.getElementById('top10-compras').innerHTML = top10c.length ? top10c.map(([n,v],i)=>
+    `<tr><td class="rank ${i<3?'top3':''}">${i+1}</td><td>${n}</td>
+     <td style="text-align:right;font-family:'DM Mono',monospace">${v.count}</td>
+     <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:500">${fmt(v.total)}</td></tr>`
+  ).join('') : '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-faint)">Sin datos para los filtros seleccionados</td></tr>';
+
+  // Top cartera
+  const top10cart = [...ALL_CARTERA].sort((a,b)=>b.saldo-a.saldo).slice(0,10);
+  document.getElementById('top10-cartera').innerHTML = top10cart.length ? top10cart.map((d,i)=>
+    `<tr><td class="rank ${i<3?'top3':''}">${i+1}</td><td>${d.NOMBRE_TERC||'—'}</td>
+     <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:500;color:var(--danger)">${fmt(d.saldo)}</td>
+     <td style="text-align:right;font-family:'DM Mono',monospace;color:${d.dias>90?'var(--danger)':d.dias>60?'var(--warn)':'inherit'}">${d.dias}d</td></tr>`
+  ).join('') : '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-faint)">Sin datos</td></tr>';
+
+  // Días de pago
+  const dMap = {};
+  pedidos.forEach(p => {
+    const nom = p.NOMBRE_TERCERO;
+    if(!dMap[nom]) dMap[nom] = { plazos:[], total:0, count:0, id:p.ID_TERCERO };
+    dMap[nom].total += getSubtotal(p);
+    dMap[nom].count++;
+    // Plazo = diferencia entre FECHA y FECHA_ENTREGA
+    try {
+      const parseFecha = f => { if(!f) return null; if(f.includes('/')) { const [d,m,a]=f.split('/'); return new Date(`${a}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`); } return new Date(f); };
+      const f1 = parseFecha(p.FECHA), f2 = parseFecha(p.FECHA_ENTREGA||p.FECHA);
+      const diff = Math.round((f2-f1)/(864e5));
+      if(!isNaN(diff) && diff >= 0) dMap[nom].plazos.push(diff);
+    } catch(e){}
+  });
+
+  // Cruzar mora con cartera
+  const cartByName = {};
+  ALL_CARTERA.forEach(c => { cartByName[c.NOMBRE_TERC] = c.dias; });
+
+  const top10d = Object.entries(dMap).sort((a,b)=>b[1].total-a[1].total).slice(0,10).map(([nom,v])=>({
+    nombre: nom,
+    plazo: v.plazos.length ? Math.round(v.plazos.reduce((a,b)=>a+b,0)/v.plazos.length) : 0,
+    mora: cartByName[nom] || 0,
+    count: v.count,
+    total: v.total
+  }));
+
+  document.getElementById('top10-dias').innerHTML = top10d.length ? top10d.map((d,i)=>
+    `<tr>
+      <td class="rank ${i<3?'top3':''}">${i+1}</td>
+      <td>${d.nombre}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${d.plazo}d</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:${d.mora>90?'var(--danger)':d.mora>30?'var(--warn)':'var(--success)'}">${d.mora}d</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${d.count}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:500">${fmt(d.total)}</td>
+    </tr>`
+  ).join('') : '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-faint)">Sin datos para los filtros seleccionados</td></tr>';
+}
+
+// ── COBRANZA ──
+function cobranzaFiltro(año, mes, vend, cli) {
+  return ALL_CARTERA.filter(c => {
+    if(vend && c.cartera.every(d=>(d.NOMBRE_VEND||'').trim()!==vend)) return false;
+    if(cli && (c.NOMBRE_TERC||'')!==cli) return false;
+    return true;
+  });
+}
+
+function renderCobranza() {
+  if(!ALL_CARTERA.length) return;
+
+  const cobAño = document.getElementById('cob-año')?.value||'';
+  const cobMes = document.getElementById('cob-mes')?.value||'';
+  const cobVend = document.getElementById('cob-vendedor')?.value||'';
+  const cobCli  = document.getElementById('cob-cliente')?.value||'';
+
+  const filtered = cobranzaFiltro(cobAño, cobMes, cobVend, cobCli);
+
+  // KPIs
+  const total = filtered.reduce((s,c)=>s+c.saldo,0);
+  const corriente = filtered.reduce((s,c)=>s+c.cartera.reduce((ss,d)=>ss+(d.RANGO1||0),0),0);
+  const vencida = filtered.reduce((s,c)=>s+c.cartera.reduce((ss,d)=>ss+(d.RANGO2||0)+(d.RANGO3||0)+(d.RANGO4||0)+(d.RANGO5||0),0),0);
+  const mora = total > 0 ? (vencida/total)*100 : 0;
+  const totalDocs = filtered.reduce((s,c)=>s+c.cartera.length,0);
+  const ticket = totalDocs > 0 ? total/totalDocs : 0;
+
+  document.getElementById('k-total').textContent = fmt(total);
+  document.getElementById('k-corriente').textContent = fmt(corriente);
+  document.getElementById('k-vencida').textContent = fmt(vencida);
+  document.getElementById('k-mora').textContent = mora.toFixed(1)+'%';
+  document.getElementById('k-ticket').textContent = fmt(ticket);
+
+  // Alerta de morosidad
+  const alertEl = document.getElementById('mora-alert');
+  const kpiMora = document.getElementById('kpi-mora');
+  if(mora >= 15) {
+    alertEl.classList.add('show');
+    kpiMora.classList.add('danger');
+    kpiMora.classList.remove('warn');
+  } else if(mora >= 10) {
+    alertEl.classList.remove('show');
+    kpiMora.classList.add('warn');
+    kpiMora.classList.remove('danger');
+  } else {
+    alertEl.classList.remove('show');
+    kpiMora.classList.remove('danger','warn');
+    kpiMora.classList.add('success');
+  }
+
+  // 1. Edad de cartera — una barra por rango
+  const RANGO_COLORS = ['#1A6B3C','#1D4ED8','#9A5B00','#B85E00','#C0392B'];
+  const carteraFiltrada = cobranzaFiltro(cobAño, cobMes, cobVend, cobCli);
+  const rangoTotales = RANGO_KEYS.map(k => Math.round(carteraFiltrada.reduce((s,c)=>s+c.cartera.reduce((ss,d)=>ss+(d[k]||0),0),0)));
+  destroyChart('edad');
+  if(document.getElementById('chart-edad')) CHARTS['edad'] = new Chart(document.getElementById('chart-edad'), {
+    type:'bar',
+    data:{ labels: RANGO_LABELS,
+      datasets:[{ data: rangoTotales, backgroundColor: RANGO_COLORS, borderRadius:6,
+        borderSkipped: false }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label: ctx => ' $'+ctx.raw.toLocaleString('es-CO') } } },
+      scales:{ y:{ ticks:{ callback:v=>'$'+Math.round(v/1000000)+'M' } },
+               x:{ ticks:{ font:{size:12} } } } }
+  });
+
+  // 2. Top 10 morosos — solo RANGO2+
+  const morosos = {};
+  filtered.forEach(c => {
+    const saldoVencido = c.cartera.reduce((s,d)=>s+(d.RANGO2||0)+(d.RANGO3||0)+(d.RANGO4||0)+(d.RANGO5||0),0);
+    if(saldoVencido > 0) morosos[c.NOMBRE_TERC||'—'] = (morosos[c.NOMBRE_TERC||'—']||0) + saldoVencido;
+  });
+  const top10m = Object.entries(morosos).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('morosos');
+  if(document.getElementById('chart-morosos')) CHARTS['morosos'] = new Chart(document.getElementById('chart-morosos'), {
+    type:'bar',
+    data:{ labels: top10m.map(([n])=>n.length>24?n.slice(0,24)+'…':n),
+           datasets:[{ data: top10m.map(([,v])=>Math.round(v)), backgroundColor:'#C0392B', borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ ticks:{ callback:v=>'$'+Math.round(v/1000000)+'M', font:{size:11} } }, y:{ ticks:{ font:{size:10} } } } }
+  });
+
+  // 3. Cartera por vendedor
+  const porVendedor = {};
+  filtered.forEach(c => c.cartera.forEach(d => {
+    const vend = d.NOMBRE_VEND && d.NOMBRE_VEND.trim() ? d.NOMBRE_VEND.trim() : 'Sin vendedor';
+    porVendedor[vend] = (porVendedor[vend]||0) + (d.SALDO||0);
+  }));
+  const vendEntries = Object.entries(porVendedor).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('vendedor');
+  if(document.getElementById('chart-vendedor')) CHARTS['vendedor'] = new Chart(document.getElementById('chart-vendedor'), {
+    type:'bar',
+    data:{ labels: vendEntries.map(([n])=>n.length>20?n.slice(0,20)+'…':n),
+           datasets:[{ data: vendEntries.map(([,v])=>Math.round(v)), backgroundColor: PALETTE, borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ ticks:{ callback:v=>'$'+Math.round(v/1000000)+'M', font:{size:11} } }, y:{ ticks:{ font:{size:10} } } } }
+  });
+
+  // 4. Tabla clientes riesgo crítico (+90 días)
+  const totalCartera = filtered.reduce((s,c)=>s+c.saldo,0);
+  const riesgo = filtered
+    .map(c => {
+      const mas90 = c.cartera.reduce((s,d)=>s+(d.RANGO5||0),0);
+      const vendedor = c.cartera.find(d=>d.NOMBRE_VEND&&d.NOMBRE_VEND.trim())?.NOMBRE_VEND?.trim() || 'Sin vendedor';
+      return { nombre: c.NOMBRE_TERC||'—', vendedor, mas90, saldo: c.saldo, dias: c.dias };
+    })
+    .filter(c => c.mas90 > 0)
+    .sort((a,b) => b.mas90 - a.mas90);
+
+  const tbRiesgo = document.getElementById('tbody-riesgo');
+  if(tbRiesgo) {
+    if(!riesgo.length) {
+      tbRiesgo.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--text-faint)">Sin clientes en mora mayor a 90 días</td></tr>';
+    } else {
+      tbRiesgo.innerHTML = riesgo.map((r,i) => {
+        const pct = totalCartera > 0 ? ((r.mas90/totalCartera)*100).toFixed(1) : '0.0';
+        const urgencia = r.dias > 180 ? '<span class="badge b-red">Crítico</span>' : r.dias > 90 ? '<span class="badge b-amber">Alto</span>' : '<span class="badge b-blue">Medio</span>';
+        return `<tr>
+          <td class="rank ${i<3?'top3':''}">${i+1}</td>
+          <td style="font-weight:500">${r.nombre}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${r.vendedor}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:500;color:var(--danger)">${fmt(r.mas90)}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace">${fmt(r.saldo)}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace">${pct}%</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--danger)">${r.dias}d</td>
+          <td>${urgencia}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+}
+// ── COBRANZA ──
+function cobranzaFiltro(año, mes, vend, cli) {
+  return ALL_CARTERA.filter(c => {
+    if(vend && c.cartera.every(d=>(d.NOMBRE_VEND||'').trim()!==vend)) return false;
+    if(cli && (c.NOMBRE_TERC||'')!==cli) return false;
+    return true;
+  });
+}
+
+function renderCobranza() {
+  if(!ALL_CARTERA.length) return;
+
+  const cobAño = document.getElementById('cob-año')?.value||'';
+  const cobMes = document.getElementById('cob-mes')?.value||'';
+  const cobVend = document.getElementById('cob-vendedor')?.value||'';
+  const cobCli  = document.getElementById('cob-cliente')?.value||'';
+
+  const filtered = cobranzaFiltro(cobAño, cobMes, cobVend, cobCli);
+
+  // KPIs
+  const total = filtered.reduce((s,c)=>s+c.saldo,0);
+  const corriente = filtered.reduce((s,c)=>s+c.cartera.reduce((ss,d)=>ss+(d.RANGO1||0),0),0);
+  const vencida = filtered.reduce((s,c)=>s+c.cartera.reduce((ss,d)=>ss+(d.RANGO2||0)+(d.RANGO3||0)+(d.RANGO4||0)+(d.RANGO5||0),0),0);
+  const mora = total > 0 ? (vencida/total)*100 : 0;
+  const totalDocs = filtered.reduce((s,c)=>s+c.cartera.length,0);
+  const ticket = totalDocs > 0 ? total/totalDocs : 0;
+
+  document.getElementById('k-total').textContent = fmt(total);
+  document.getElementById('k-corriente').textContent = fmt(corriente);
+  document.getElementById('k-vencida').textContent = fmt(vencida);
+  document.getElementById('k-mora').textContent = mora.toFixed(1)+'%';
+  document.getElementById('k-ticket').textContent = fmt(ticket);
+
+  // Alerta de morosidad
+  const alertEl = document.getElementById('mora-alert');
+  const kpiMora = document.getElementById('kpi-mora');
+  if(mora >= 15) {
+    alertEl.classList.add('show');
+    kpiMora.classList.add('danger');
+    kpiMora.classList.remove('warn');
+  } else if(mora >= 10) {
+    alertEl.classList.remove('show');
+    kpiMora.classList.add('warn');
+    kpiMora.classList.remove('danger');
+  } else {
+    alertEl.classList.remove('show');
+    kpiMora.classList.remove('danger','warn');
+    kpiMora.classList.add('success');
+  }
+
+  // 1. Edad de cartera — una barra por rango
+  const RANGO_COLORS = ['#1A6B3C','#1D4ED8','#9A5B00','#B85E00','#C0392B'];
+  const carteraFiltrada = cobranzaFiltro(cobAño, cobMes, cobVend, cobCli);
+  const rangoTotales = RANGO_KEYS.map(k => Math.round(carteraFiltrada.reduce((s,c)=>s+c.cartera.reduce((ss,d)=>ss+(d[k]||0),0),0)));
+  destroyChart('edad');
+  if(document.getElementById('chart-edad')) CHARTS['edad'] = new Chart(document.getElementById('chart-edad'), {
+    type:'bar',
+    data:{ labels: RANGO_LABELS,
+      datasets:[{ data: rangoTotales, backgroundColor: RANGO_COLORS, borderRadius:6,
+        borderSkipped: false }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label: ctx => ' $'+ctx.raw.toLocaleString('es-CO') } } },
+      scales:{ y:{ ticks:{ callback:v=>'$'+Math.round(v/1000000)+'M' } },
+               x:{ ticks:{ font:{size:12} } } } }
+  });
+
+  // 2. Top 10 morosos — solo RANGO2+
+  const morosos = {};
+  filtered.forEach(c => {
+    const saldoVencido = c.cartera.reduce((s,d)=>s+(d.RANGO2||0)+(d.RANGO3||0)+(d.RANGO4||0)+(d.RANGO5||0),0);
+    if(saldoVencido > 0) morosos[c.NOMBRE_TERC||'—'] = (morosos[c.NOMBRE_TERC||'—']||0) + saldoVencido;
+  });
+  const top10m = Object.entries(morosos).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('morosos');
+  if(document.getElementById('chart-morosos')) CHARTS['morosos'] = new Chart(document.getElementById('chart-morosos'), {
+    type:'bar',
+    data:{ labels: top10m.map(([n])=>n.length>24?n.slice(0,24)+'…':n),
+           datasets:[{ data: top10m.map(([,v])=>Math.round(v)), backgroundColor:'#C0392B', borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ ticks:{ callback:v=>'$'+Math.round(v/1000000)+'M', font:{size:11} } }, y:{ ticks:{ font:{size:10} } } } }
+  });
+
+  // 3. Cartera por vendedor
+  const porVendedor = {};
+  filtered.forEach(c => c.cartera.forEach(d => {
+    const vend = d.NOMBRE_VEND && d.NOMBRE_VEND.trim() ? d.NOMBRE_VEND.trim() : 'Sin vendedor';
+    porVendedor[vend] = (porVendedor[vend]||0) + (d.SALDO||0);
+  }));
+  const vendEntries = Object.entries(porVendedor).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('vendedor');
+  if(document.getElementById('chart-vendedor')) CHARTS['vendedor'] = new Chart(document.getElementById('chart-vendedor'), {
+    type:'bar',
+    data:{ labels: vendEntries.map(([n])=>n.length>20?n.slice(0,20)+'…':n),
+           datasets:[{ data: vendEntries.map(([,v])=>Math.round(v)), backgroundColor: PALETTE, borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ ticks:{ callback:v=>'$'+Math.round(v/1000000)+'M', font:{size:11} } }, y:{ ticks:{ font:{size:10} } } } }
+  });
+
+  // 4. Tabla clientes riesgo crítico (+90 días)
+  const totalCartera = filtered.reduce((s,c)=>s+c.saldo,0);
+  const riesgo = filtered
+    .map(c => {
+      const mas90 = c.cartera.reduce((s,d)=>s+(d.RANGO5||0),0);
+      const vendedor = c.cartera.find(d=>d.NOMBRE_VEND&&d.NOMBRE_VEND.trim())?.NOMBRE_VEND?.trim() || 'Sin vendedor';
+      return { nombre: c.NOMBRE_TERC||'—', vendedor, mas90, saldo: c.saldo, dias: c.dias };
+    })
+    .filter(c => c.mas90 > 0)
+    .sort((a,b) => b.mas90 - a.mas90);
+
+  const tbRiesgo = document.getElementById('tbody-riesgo');
+  if(tbRiesgo) {
+    if(!riesgo.length) {
+      tbRiesgo.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--text-faint)">Sin clientes en mora mayor a 90 días</td></tr>';
+    } else {
+      tbRiesgo.innerHTML = riesgo.map((r,i) => {
+        const pct = totalCartera > 0 ? ((r.mas90/totalCartera)*100).toFixed(1) : '0.0';
+        const urgencia = r.dias > 180 ? '<span class="badge b-red">Crítico</span>' : r.dias > 90 ? '<span class="badge b-amber">Alto</span>' : '<span class="badge b-blue">Medio</span>';
+        return `<tr>
+          <td class="rank ${i<3?'top3':''}">${i+1}</td>
+          <td style="font-weight:500">${r.nombre}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${r.vendedor}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:500;color:var(--danger)">${fmt(r.mas90)}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace">${fmt(r.saldo)}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace">${pct}%</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--danger)">${r.dias}d</td>
+          <td>${urgencia}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+}
+
+</script>
+</body>
+</html>
